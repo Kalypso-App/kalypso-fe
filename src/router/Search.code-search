@@ -1,0 +1,7 @@
+# Query: Choose a Brand Logo file
+# Flags: IgnoreExcludeSettings
+
+1 result - 1 file
+
+src/views/campaigns/NewCampaign.vue:
+  386:         "<i class='fa fa-cloud-upload'></i><strong>Choose a Brand Logo file</strong> or drag it here",
