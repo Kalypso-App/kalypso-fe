@@ -56,7 +56,7 @@
                                     </v-menu>
                                 </v-col>
                                 <v-col cols="12" sm="6" class="py-0">
-                                    <v-text-field prepend-inner-icon="mdi-currency-usd" v-model="amount" type="number" label="Budget" :rules="[(v) => !!v || 'Budget is required']" filled class="input-style amount-input" background="#F8F8FF"></v-text-field>
+                                    <v-text-field prepend-inner-icon="mdi-currency-usd" v-model="amount" type="number" label="Budget" filled class="input-style amount-input" background="#F8F8FF"></v-text-field>
                                 </v-col>
                                 <v-col cols="12" sm="6" class="py-0">
                                     <v-file-input v-model="logo" label="Campaign logo" filled class="input-style" background="#F8F8FF" @change="onFileChange"></v-file-input>
@@ -76,6 +76,9 @@
 
                 <v-stepper-content step="2">
                     <div class="mb-12" color="white" height="350px">
+                        <h2 class="card-name text-center">
+                            Select the specific posts and video you posted on behalf of this campaign.<br /> Ex: 2 Instagram Story slides and 1 Instagram feed post
+                        </h2>
                         <v-row>
                             <v-col cols="12" md="4" xs="12">
                                 <div class="modal-mask">
@@ -114,8 +117,8 @@
                                                 <v-row>
                                                     <v-col v-for="(post, i) in posts" @click="togglePost(i)" :key="i" class="d-flex child-flex" cols="4">
                                                         <v-card flat tile class="d-flex" :class="post.is_selected ? 'selected-post' : ''">
-                                                            <video aspect-ratio="1" controls class="v-responsive ma-0" align="center" justify="center" v-if="isVideo(post.media_url)">
-                                                                <source :src="post.media_url" type="video/mp4">
+                                                            <video aspect-ratio="1" preload="metadata" controls loop muted class="v-responsive ma-0" align="center" justify="center" v-if="isVideo(post.media_url)">
+                                                                <source :src="`${post.media_url}$t=0.1`" type="video/mp4">
                                                             </video>
                                                             <v-img v-else :src="post.media_url" aspect-ratio="1">
                                                                 <template v-slot:placeholder>
@@ -129,9 +132,9 @@
                                                 </v-row>
                                             </v-card-text>
                                             <v-card-actions>
-                                                <v-icon v-bind:style="this.postsCursor.paging && this.postsCursor.paging.previous ? 'color:#8f8f8f': 'color:#cdcdcd' " @click="getIgFeedLeft()" >mdi-arrow-left</v-icon>
+                                                <v-icon v-bind:style="this.postsCursor.paging && this.postsCursor.paging.previous ? 'color:#8f8f8f': 'color:#cdcdcd' " @click="getIgFeedLeft()">mdi-arrow-left</v-icon>
                                                 <v-spacer></v-spacer>
-                                                <v-icon  v-bind:style="this.postsCursor.paging && this.postsCursor.paging.next ? 'color:#8f8f8f': 'color:#cdcdcd' " @click="getIgFeedRight()" >mdi-arrow-right</v-icon>
+                                                <v-icon v-bind:style="this.postsCursor.paging && this.postsCursor.paging.next ? 'color:#8f8f8f': 'color:#cdcdcd' " @click="getIgFeedRight()">mdi-arrow-right</v-icon>
                                             </v-card-actions>
                                         </v-card>
 
@@ -140,6 +143,74 @@
                             </v-col>
                             <v-col cols="12" md="4" xs="12">
                                 <div class="modal-mask">
+                                    <v-dialog v-model="addStoryDialog" scrollable max-width="448px">
+                                        <v-card class="modal-padding">
+                                            <div class="modal-header">
+                                                <div class="title-part">
+                                                    <h1>{{this.editStory ? 'Edit': 'Add'}} Instagram Story</h1>
+                                                </div>
+                                            </div>
+
+                                            <div class="instagram-profile" v-if="campaignIgDetail">
+                                                <div class="instagram-info pl-8 pt-8 d-inline-flex justify-space-between align-center">
+                                                    <div class="d-flex align-center">
+                                                        <v-img class="instagram-info-logo-story-upload" :src="campaignIgDetail.profile_picture_url"></v-img>
+                                                        <v-img class="instagram-logo-story-upload" src="@/assets/images/instagram.png" alt></v-img>
+
+                                                        <div style="padding-left:5px;">
+                                                            <h5 class="instagram-name py-0 pl-2">
+                                                                @{{ campaignIgDetail.username }}
+                                                            </h5>
+
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <v-card-text style="height: 592px;">
+                                                <v-form ref="form1">
+                                                    <v-row class="px-6 pt-8">
+                                                        <v-col v-if="isEditOlderStory" cols="12" sm="12" class="py-0">
+                                                            <v-file-input v-model="oldStory" label="Upload Story" filled class="input-style" background="#F8F8FF" @change="onFileStoryChange"></v-file-input>
+                                                        </v-col>
+                                                        <v-col v-if="isEditOlderStory && editStory" cols="12" sm="12" class="py-0">
+                                                            <video height="40px" aspect-ratio="1" preload="metadata" controls loop muted class="v-responsive ma-0" align="center" justify="center" v-if="isVideo(oldStorySrc)">
+                                                                <source :src="`${oldStorySrc}$t=0.1`" type="video/mp4">
+                                                            </video>
+                                                            <v-img height="60px" width="60px" v-else :src="oldStorySrc" aspect-ratio="1">
+                                                                <template v-slot:placeholder>
+                                                                    <v-row class="fill-height ma-0" align="center" justify="center">
+                                                                        <v-progress-circular indeterminate color="grey lighten-5"></v-progress-circular>
+                                                                    </v-row>
+                                                                </template>
+                                                            </v-img>
+                                                        </v-col>
+                                                        <v-col v-if="isEditOlderStory" cols="12" sm="12" class="py-0">
+                                                            <v-text-field v-model="impressions" type="number" label="Impressions" filled class="input-style amount-input" background="#F8F8FF"></v-text-field>
+                                                        </v-col>
+                                                        <v-col v-if="isEditOlderStory" cols="12" sm="12" class="py-0">
+                                                            <v-text-field v-model="reach" type="number" label="Reach" filled class="input-style amount-input" background="#F8F8FF"></v-text-field>
+                                                        </v-col>
+                                                        <v-col v-if="isEditOlderStory" cols="12" sm="12" class="py-0">
+                                                            <v-text-field v-model="taps_back" type="number" label="Taps Back" filled class="input-style amount-input" background="#F8F8FF"></v-text-field>
+                                                        </v-col>
+                                                        <v-col v-if="isEditOlderStory" cols="12" sm="12" class="py-0">
+                                                            <v-text-field v-model="replies" type="number" label="Replies" filled class="input-style amount-input" background="#F8F8FF"></v-text-field>
+                                                        </v-col>
+                                                         <v-col cols="12" sm="12" class="py-0">
+                                                            <v-text-field v-model="swipe_ups" type="number" label="Swipe Ups" filled class="input-style amount-input" background="#F8F8FF"></v-text-field>
+                                                        </v-col>
+                                                    </v-row>
+                                                </v-form>
+                                            </v-card-text>
+                                            <v-card-actions>
+                                                <v-btn @click="onSaveStoryClick()" width="100%" class="modal-btn">
+                                                    {{ this.editStory ? 'Edit' : 'Add' }} Story
+                                                </v-btn>
+                                            </v-card-actions>
+                                            <v-spacer></v-spacer>
+                                            <v-divider></v-divider>
+                                        </v-card>
+                                    </v-dialog>
                                     <v-dialog v-model="dialog2" scrollable max-width="448px">
                                         <template v-slot:activator="{  }">
                                             <v-btn @click="openInstagramStoriesDialog" class="modal-btn">
@@ -170,18 +241,28 @@
                               }}
                                                     </span>
                                                 </div>
+
+                                            </div>
+                                            <div style="margin:10px 50px;">
+                                                <v-btn @click="onAddStoryClick()" width="100%" class="modal-btn">
+                                                    Add Older Instagram Stories
+                                                </v-btn>
                                             </div>
                                             <v-divider></v-divider>
                                             <v-card-text v-loading="dashboardLoading" style="height: 592px;">
                                                 <v-row>
-                                                    <v-col v-for="(story, i) in stories" @click="toggleStory(i)" :key="i" class="d-flex child-flex" cols="4">
+                                                    <v-col v-for="(story, i) in stories" @click="toggleStory(i)" :key="story.id" class="d-flex child-flex" cols="4">
                                                         <v-card flat tile class="d-flex" :class="
                                   story.is_selected ? 'selected-post' : ''
                                 ">
-                                                            <video v-if="isVideo(story.media_url)" aspect-ratio="1" controls class="v-responsive ma-0" align="center" justify="center">
-                                                                <source :src="story.media_url" type="video/mp4">
+                                                            <div class="older-story">
+                                                                <v-icon  v-if="story.isOlderStory" @click.stop="onOldStoryDelete(story)">mdi-delete</v-icon>
+                                                                <v-icon @click.stop="onOldStoryEdit(story)">mdi-pencil</v-icon>
+                                                            </div>
+                                                            <video style="max-height:220px;height:220px;" preload="metadata" controls loop muted height="220px" v-if="isVideo(story.media_url, story.media_type)" aspect-ratio="1" class="v-responsive ma-0 test" align="center" justify="center">
+                                                                <source :src="`${story.media_url}#t=0.1`" type="video/mp4">
                                                             </video>
-                                                            <v-img v-else :src="story.media_url" aspect-ratio="1">
+                                                            <v-img height="220px" v-else :src="story.media_url" aspect-ratio="1">
                                                                 <template v-slot:placeholder>
                                                                     <v-row class="fill-height ma-0" align="center" justify="center">
                                                                         <v-progress-circular indeterminate color="grey lighten-5"></v-progress-circular>
@@ -192,6 +273,17 @@
                                                     </v-col>
                                                 </v-row>
                                             </v-card-text>
+                                        </v-card>
+                                    </v-dialog>
+                                    <v-dialog v-model="deleteStory" max-width="550" height="250">
+                                        <v-card class="delete-modal-title">
+                                            <h3>Are you sure?</h3>
+                                            <div class="txt-delete">Do you really want to delete your Story?</div>
+                                            <v-card-actions>
+                                                <v-spacer></v-spacer>
+                                                <v-btn style="width: auto" class="cancel-gray" @click="deleteStory = false">Cancel</v-btn>
+                                                <v-btn style="width: auto" class="confirm-purple" @click="onDeleteStoryConfrim()">Delete</v-btn>
+                                            </v-card-actions>
                                         </v-card>
                                     </v-dialog>
                                 </div>
@@ -339,13 +431,281 @@
                                                 </div>
                                             </div>
                                             <v-divider></v-divider>
-                                            <v-select :items="googleViews" label="Choose Google View" dense @change="getStatistics" rounded v-model="selectedGoogleView" item-value="id" item-text="websiteUrl" append-icon="mdi-chevron-down" outlined></v-select>
+                                            <v-select class="px-4" :items="googleViews" label="Choose Google View" dense @change="getStatistics" rounded v-model="selectedGoogleView" item-value="id" item-text="websiteUrl" append-icon="mdi-chevron-down" outlined></v-select>
+                                            <v-menu class="px-4" ref="menu" v-model="menuDate" :close-on-content-click="false" transition="scale-transition" offset-y max-width="290px" min-width="290px">
+                                                <template v-slot:activator="{ on }">
+                                                    <v-text-field  v-model="dateFormattedGA" label="Blog Published Date" class="px-4 input-style" append-icon="mdi-calendar-blank-outline" @blur="dateGA = parseDate(dateFormattedGA)" v-on="on" v-on:click:append="menuDate=true"></v-text-field>
+                                                </template>
+                                                <v-date-picker v-model="dateGA" no-title>
+                                                    <v-spacer></v-spacer>
+                                                    <v-btn width="auto" text color="primary" @click="menuDate = false">Cancel</v-btn>
+                                                    <v-btn width="auto" text color="primary" @click="$refs.menu.save(dateFormattedGA)">OK</v-btn>
+                                                </v-date-picker>
+                                            </v-menu>
                                             <v-card-text v-loading="blogdashboardLoading" style="height: 592px;">
                                                 <v-row v-if="blogPages.data">
                                                     <v-text-field class="input-search px-4" v-model="searchBlogText" placeholder="Search" append-icon="mdi-magnify" @click:append="searchBlogs" v-on:keyup.enter="searchBlogs" hide-details single-line></v-text-field>
                                                     <v-col v-for="(post, i) in blog_pages" @click="toggleBlogPost(i)" :key="i" class cols="6">
                                                         <v-card :title="post['insights']['ga:pageTitle']" flat tile class="d-flex blog_post" :class="post.is_selected ? 'selected-post' : ''">
-                                                            <span>{{ post["insights"]["ga:pagePath"] }}</span>
+                                                            <span style="overflow:hidden">{{ post["insights"]["ga:pagePath"] }}</span>
+                                                        </v-card>
+                                                    </v-col>
+                                                </v-row>
+                                            </v-card-text>
+                                        </v-card>
+                                    </v-dialog>
+                                </div>
+                            </v-col>
+                            <v-col cols="12" md="4" xs="12">
+                                <div class="modal-mask">
+                                    <v-dialog v-model="dialog6" scrollable max-width="448px">
+                                        <template v-slot:activator="{  }">
+                                            <v-btn @click="openFacebookDialog" class="modal-btn">
+                                                <img width="42px" src="@/assets/images/facebook-logo.png" alt />
+                                                <p>
+                                                    Add Facebook
+                                                    <br />Post
+                                                </p>
+                                                <div v-if="selectedFacebook.length" class="no-of-posts">
+                                                    <span>{{selectedFacebook.length}}</span>
+                                                </div>
+                                            </v-btn>
+                                        </template>
+                                        <v-card class="modal-padding">
+                                            <div class="modal-header">
+                                                <div class="title-part">
+                                                    <h1>Select one or more Facebook posts</h1>
+                                                    <p>
+                                                        Select one or more Facebook posts that you want
+                                                        to
+                                                        <br />add to your campaign
+                                                    </p>
+                                                </div>
+                                                <v-spacer></v-spacer>
+                                                <div class="add-btn" @click="dialog6=false" style="cursor:pointer">
+                                                    <v-icon color=" white">mdi-plus</v-icon>
+                                                    <span>
+                                                        {{ selectedFacebook.length }}
+                                                        {{
+                              selectedFacebook.length > 0
+                              ? "Selected"
+                              : "Add"
+                              }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <v-divider></v-divider>
+                                            <v-card-text v-loading="dashboardLoading" style="height: 592px;">
+                                                <v-row>
+                                                    <v-col v-for="(facebook, i) in facebooks" @click="toggleFacebook(i)" :key="i" class="d-flex child-flex" cols="6">
+                                                        <v-card style="flex-direction:column" flat tile class="d-flex" :class="facebook.is_selected ? 'selected-post' : ''">
+                                                            <p :title="facebook.message" v-if="facebook.message" class="facebook-post-message">{{facebook.message}}</p>
+                                                            <p :title="facebook.story" v-else class="facebook-post-message">{{facebook.story}}</p>
+                                                            <div v-if="facebook.attachments && facebook.attachments.data">
+                                                                <video style="max-height:220px;height:220px;" preload="metadata" controls loop muted height="220px" v-if="isVideo(facebook.attachments.data[0].media.image.src)" aspect-ratio="1" class="v-responsive ma-0 test" align="center" justify="center">
+                                                                    <source :src="`${facebook.attachments.data[0].media.image.src}#t=0.1`" type="video/mp4">
+                                                                </video>
+                                                                <v-img height="220px" v-else :src="facebook.attachments.data[0].media.image.src" aspect-ratio="1">
+                                                                    <template v-slot:placeholder>
+                                                                        <v-row class="fill-height ma-0" align="center" justify="center">
+                                                                            <v-progress-circular indeterminate color="grey lighten-5"></v-progress-circular>
+                                                                        </v-row>
+                                                                    </template>
+                                                                </v-img>
+                                                            </div>
+                                                        </v-card>
+                                                    </v-col>
+                                                </v-row>
+                                            </v-card-text>
+                                        </v-card>
+                                    </v-dialog>
+                                </div>
+                            </v-col>
+                            <v-col cols="12" md="4" xs="12">
+                                <div class="modal-mask">
+                                    <v-dialog v-model="dialog8" scrollable max-width="448px">
+                                        <template v-slot:activator="{  }">
+                                            <v-btn @click="openReelsDialog" class="modal-btn">
+                                                <img width="42px" src="@/assets/images/ig-reels.png" alt />
+                                                <p>
+                                                    Add Instagram
+                                                    <br />Reel
+                                                </p>
+                                                <div v-if="selectedReels.length" class="no-of-posts">
+                                                    <span>{{selectedReels.length}}</span>
+                                                </div>
+                                            </v-btn>
+                                        </template>
+                                        <v-card class="modal-padding">
+                                            <div class="modal-header">
+                                                <div class="title-part">
+                                                    <h1>Select one or more Instagram Reels</h1>
+                                                    <p>
+                                                        Select one or more Instagram Reels that you want
+                                                        to
+                                                        <br />add to your campaign
+                                                    </p>
+                                                </div>
+                                                <v-spacer></v-spacer>
+                                                <div class="add-btn" @click="dialog8=false" style="cursor:pointer">
+                                                    <v-icon color=" white">mdi-plus</v-icon>
+                                                    <span>
+                                                        {{ selectedReels.length }}
+                                                        {{
+                              selectedReels.length > 0
+                              ? "Selected"
+                              : "Add"
+                              }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div style="margin:10px 50px;">
+                                                <v-btn @click="onAddReelClick()" width="100%" class="modal-btn">
+                                                    Manually Add Instagram Reels
+                                                </v-btn>
+                                                <span style="font-weight: normal;font-size: 12px; line-height: 16px; margin-bottom: 0;">Instagram does not yet allow us to automatically pull Reels data. Upload your video and type in data. </span>
+                                            </div>
+                                            <v-divider></v-divider>
+                                            <v-card-text v-loading="dashboardLoading" style="height: 592px;">
+                                                <v-row>
+                                                    <v-col v-for="(reel, i) in reels" @click="toggleReel(i)" :key="i" class="d-flex child-flex" cols="6">
+                                                        <v-card style="flex-direction:column" flat tile class="d-flex" :class="reel.is_selected ? 'selected-post' : ''">
+                                                            <div class="older-story">
+                                                                <v-icon @click.stop="onOldReelDelete(reel)">mdi-delete</v-icon>
+                                                                <v-icon @click.stop="onOldReelEdit(reel)">mdi-pencil</v-icon>
+                                                            </div>
+                                                            <video style="max-height:220px;height:220px;" preload="metadata" controls loop muted height="220px" v-if="isVideo(reel.media_url)" aspect-ratio="1" class="v-responsive ma-0 test" align="center" justify="center">
+                                                                <source :src="`${reel.media_url}#t=0.1`" type="video/mp4">
+                                                            </video>
+
+                                                        </v-card>
+                                                    </v-col>
+                                                </v-row>
+                                            </v-card-text>
+                                        </v-card>
+                                    </v-dialog>
+                                    <v-dialog v-model="addReelDialog" scrollable max-width="448px">
+                                        <v-card class="modal-padding">
+                                            <div class="modal-header">
+                                                <div class="title-part">
+                                                    <h1>{{this.editReel ? 'Edit': 'Add'}} Instagram Reel</h1>
+                                                </div>
+                                            </div>
+
+                                            <div class="instagram-profile" v-if="campaignIgDetail">
+                                                <div class="instagram-info pl-8 pt-8 d-inline-flex justify-space-between align-center">
+                                                    <div class="d-flex align-center">
+                                                        <v-img class="instagram-info-logo-story-upload" :src="campaignIgDetail.profile_picture_url"></v-img>
+                                                        <v-img class="instagram-logo-story-upload" src="@/assets/images/instagram.png" alt></v-img>
+
+                                                        <div style="padding-left:5px;">
+                                                            <h5 class="instagram-name py-0 pl-2">
+                                                                @{{ campaignIgDetail.username }}
+                                                            </h5>
+
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <v-card-text style="height: 592px;">
+                                                <v-form ref="form1">
+                                                    <v-row class="px-6 pt-8">
+                                                        <v-col cols="12" sm="12" class="py-0">
+                                                            <v-file-input accept="video/*" v-model="oldReel" label="Upload Video" filled class="input-style" background="#F8F8FF" @change="onFileReelChange"></v-file-input>
+                                                        </v-col>
+                                                        <v-col v-if="editReel" cols="12" sm="12" class="py-0">
+                                                            <video height="70px" aspect-ratio="1" preload="metadata" controls loop muted class="v-responsive ma-0" align="center" justify="center" v-if="isVideo(oldReelSrc)">
+                                                                <source :src="`${oldReelSrc}#t=0.1`" type="video/mp4">
+                                                            </video>
+                                                        </v-col>
+                                                        <v-col cols="12" sm="12" class="py-0">
+                                                            <v-text-field v-model="reel_views" type="number" label="Views" filled class="input-style amount-input" background="#F8F8FF"></v-text-field>
+                                                        </v-col>
+                                                        <v-col cols="12" sm="12" class="py-0">
+                                                            <v-text-field v-model="reel_likes" type="number" label="Likes" filled class="input-style amount-input" background="#F8F8FF"></v-text-field>
+                                                        </v-col>
+                                                        <v-col cols="12" sm="12" class="py-0">
+                                                            <v-text-field v-model="reel_comments" type="number" label="Comments" filled class="input-style amount-input" background="#F8F8FF"></v-text-field>
+                                                        </v-col>
+                                                    </v-row>
+                                                </v-form>
+                                            </v-card-text>
+                                            <v-card-actions>
+                                                <v-btn @click="onSaveReelClick()" width="100%" class="modal-btn">
+                                                    {{ this.editReel ? 'Edit' : 'Add' }} Reel
+                                                </v-btn>
+                                            </v-card-actions>
+                                            <v-spacer></v-spacer>
+                                            <v-divider></v-divider>
+                                        </v-card>
+                                    </v-dialog>
+                                    <v-dialog v-model="deleteReel" max-width="550" height="250">
+                                        <v-card class="delete-modal-title">
+                                            <h3>Are you sure?</h3>
+                                            <div class="txt-delete">Do you really want to delete Reel?</div>
+                                            <v-card-actions>
+                                                <v-spacer></v-spacer>
+                                                <v-btn style="width: auto" class="cancel-gray" @click="deleteReel = false">Cancel</v-btn>
+                                                <v-btn style="width: auto" class="confirm-purple" @click="onDeleteReelConfrim()">Delete</v-btn>
+                                            </v-card-actions>
+                                        </v-card>
+                                    </v-dialog>
+                                </div>
+                            </v-col>
+                            <v-col cols="12" md="4" xs="12">
+                                <div class="modal-mask">
+                                    <v-dialog v-model="dialog7" scrollable max-width="448px">
+                                        <template v-slot:activator="{  }">
+                                            <v-btn @click="openTikTokDialog" class="modal-btn">
+                                                <img width="64px" src="@/assets/images/TikTok-Logo.png" alt />
+                                                <p>
+                                                   Add Tik Tok 
+                                                    <br />Video
+                                                </p>
+                                                <div v-if="selectedTiktok.length" class="no-of-posts">
+                                                    <span>{{selectedTiktok.length}}</span>
+                                                </div>
+                                            </v-btn>
+                                        </template>
+                                        <v-card class="modal-padding">
+                                            <div class="modal-header">
+                                                <div class="title-part">
+                                                    <h1>Select one or more Tik Tok videos</h1>
+                                                    <p>
+                                                       Select one or more Tik Tok videos that you want
+                                                        to
+                                                        <br />add to your campaign
+                                                    </p>
+                                                </div>
+                                                <v-spacer></v-spacer>
+                                                <div class="add-btn" @click="dialog7=false" style="cursor:pointer">
+                                                    <v-icon color=" white">mdi-plus</v-icon>
+                                                    <span>
+                                                        {{ selectedTiktok.length }}
+                                                        {{
+                              selectedTiktok.length > 0
+                              ? "Selected"
+                              : "Add"
+                              }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <v-divider></v-divider>
+                                            <v-card-text v-loading="dashboardLoading" style="height: 592px;">
+                                                <v-row>
+                                                    <v-col v-for="(tiktok, i) in tiktoks" @click="toggleTiktok(i)" :key="i" class="d-flex child-flex" cols="4">
+                                                        <v-card flat tile class="d-flex" :class="tiktok.is_selected ? 'selected-post' : ''">
+                                                            <!-- <video aspect-ratio="1"  preload="metadata" controls loop muted class="v-responsive ma-0" align="center" justify="center">
+                                                                 <source :src="`${post.videoUrl}$t=0.1`" type="video/mp4">
+                                                             </video>-->
+                                                            <v-img height="220px" :src="tiktok.covers.default" aspect-ratio="1">
+                                                                <template v-slot:placeholder>
+                                                                    <v-row class="fill-height ma-0" align="center" justify="center">
+                                                                        <v-progress-circular indeterminate color="grey lighten-5"></v-progress-circular>
+                                                                    </v-row>
+                                                                </template>
+                                                            </v-img>
+
                                                         </v-card>
                                                     </v-col>
                                                 </v-row>
@@ -373,6 +733,9 @@
 import {
     FbAppId
 } from "../../config";
+import {
+    pro_key
+} from "../../config";
 
 export default {
     name: "CreateCampaign",
@@ -393,7 +756,10 @@ export default {
         e1: 1,
         date: new Date().toISOString().substr(0, 10),
         dateFormatted: vm.formatDate(new Date().toISOString().substr(0, 10)),
+        dateGA: new Date().toISOString().substr(0, 10),
+        dateFormattedGA: vm.formatDate(new Date().toISOString().substr(0, 10)),
         menu: false,
+        menuDate: false,
         modal: false,
         menu2: false,
         first: "",
@@ -402,13 +768,20 @@ export default {
         dialog3: false,
         dialog4: false,
         dialog5: false,
+        dialog6: false,
+        dialog7: false,
+        dialog8: false,
+        addStoryDialog: false,
         amount: 0,
         campaignName: "",
         brandName: "",
         images: [],
         posts: [],
+        tiktoks: [],
         postsCursor: [],
         stories: [],
+        facebooks: [],
+        reels: [],
         brand_logo: null,
         googleViews: [],
         blogPages: [],
@@ -427,6 +800,35 @@ export default {
                 text: "New Campaign",
             },
         ],
+        oldStory: null,
+        oldStorySrc: null,
+        oldStoryExtension: null,
+        oldStoryFile: null,
+        impressions: 0,
+        reach: 0,
+        taps_forward: 0,
+        taps_back: 0,
+        exits: 0,
+        replies: 0,
+        swipe_ups:0,
+        isEditOlderStory: false,
+        deleteStory: false,
+        deleteStoryId: null,
+        editStory: false,
+        editStoryData: null,
+        oldReel: null,
+        oldReelSrc: null,
+        oldReelExtension: null,
+        oldReelFile: null,
+        deleteReel: false,
+        deleteReelId: null,
+        editReel: false,
+        editReelData: null,
+        addReelDialog: false,
+        reel_views: 0,
+        reel_likes: 0,
+        reel_comments: 0,
+
     }),
     async created() {
         if (this.isEdit) {
@@ -445,8 +847,8 @@ export default {
         //.then(this.getYtChannels);
     },
     methods: {
-        isVideo(filename) {
-            return /\.mp4/.test(filename)
+        isVideo(filename, type = "IMAGE") {
+            return ( /\.mp4|\.mov/.test(filename) || type == "VIDEO");
         },
         onFileChange(e) {
             let vm = this;
@@ -474,7 +876,12 @@ export default {
             this.stories = this.campaign.stories;
             this.yt_videos = this.campaign.yt_videos;
             this.blog_pages = this.campaign.blog_pages;
-
+            this.facebooks = this.campaign.fbposts;
+            this.tiktoks = this.campaign.tiktoks;
+            this.reels = this.campaign.reels;
+            if(this.campaign.ga_blog_date){
+                this.dateGA = new Date(this.campaign.ga_blog_date).toISOString().substr(0, 10);
+            }
         },
         getCampaignImage() {
             if (this.logoSrc) {
@@ -538,6 +945,56 @@ export default {
             }
             this.dialog2 = true;
             this.initAndFetchInstagramStuff();
+        },
+        async openFacebookDialog() {
+            this.dialog6 = true;
+            this.dashboardLoading = true;
+            let me = this;
+
+            let response = await this.$http.get(`/instagram/fbposts`);
+            response.data.forEach((item) => {
+                item.is_selected = false;
+                if (me.isEdit && me.campaign) {
+                    let isSelected = me.campaign.fbposts.findIndex(x => x.id == item.id);
+                    if (isSelected != -1) {
+                        item.is_selected = true;
+                    }
+                }
+            });
+            this.facebooks = response.data;
+
+            this.dashboardLoading = false;
+
+        },
+        async openReelsDialog() {
+            this.dialog8 = true;
+            this.dashboardLoading = true;
+            let me = this;
+
+            let response = await this.$http.get(`/instagram/reels`);
+            response.data.forEach((item) => {
+                item.is_selected = false;
+                if (me.isEdit && me.campaign) {
+                    let isSelected = me.campaign.reels.findIndex(x => x.id == item.id);
+                    if (isSelected != -1) {
+                        item.is_selected = true;
+                    }
+                }
+            });
+            this.reels = response.data;
+            this.dashboardLoading = false;
+        },
+        async openTikTokDialog() {
+            this.dialog7 = true;
+            this.dashboardLoading = true;
+            let me = this;
+            let response = await this.$http.get(`/tiktok/posts`);
+            response.data.collector.forEach(item => {
+                item.is_selected = false;
+            });
+            this.tiktoks = response.data.collector;
+
+            this.dashboardLoading = false;
         },
         openYoutubeDialog() {
             if (
@@ -642,9 +1099,12 @@ export default {
             try {
                 this.blogdashboardLoading = true;
                 let me = this;
-                //this.blog_pages = [];
+                let webUrl = this.googleViews.find(x=>x.id == this.selectedGoogleView).websiteUrl;
+                if(webUrl){
+                    this.searchBlogText = this.searchBlogText.replace(webUrl,"");
+                }
                 let response = await this.$http.get(
-                    `auth/gareport/${this.user._id}/${this.selectedGoogleView}/${this.searchBlogText}`
+                    `auth/gareport/${this.user._id}/${this.selectedGoogleView}?search=${this.searchBlogText}`
                 );
                 /*
                  let response = await this.$http.get(
@@ -725,19 +1185,19 @@ export default {
                 this.e1 = 2;
             }
         },
-        async getIgFeedLeft(){
-            if(this.postsCursor && this.postsCursor.paging && this.postsCursor.paging.previous){
-                let before =  this.postsCursor.paging.cursors.before;
+        async getIgFeedLeft() {
+            if (this.postsCursor && this.postsCursor.paging && this.postsCursor.paging.previous) {
+                let before = this.postsCursor.paging.cursors.before;
                 await this.getInstagramPosts(`before=${before}`);
             }
         },
-        async getIgFeedRight(){
-            if(this.postsCursor && this.postsCursor.paging && this.postsCursor.paging.next){
-                let after =  this.postsCursor.paging.cursors.after;
+        async getIgFeedRight() {
+            if (this.postsCursor && this.postsCursor.paging && this.postsCursor.paging.next) {
+                let after = this.postsCursor.paging.cursors.after;
                 await this.getInstagramPosts(`after=${after}`);
             }
         },
-        async getInstagramPosts(params="") {
+        async getInstagramPosts(params = "") {
             this.dashboardLoading = true;
             let me = this;
             //let response = await this.$http.get("/instagram/igposts");
@@ -745,14 +1205,28 @@ export default {
             response.data.data.forEach((item) => {
                 item.is_selected = false;
                 if (me.isEdit && me.campaign) {
-                    let isSelected = me.campaign.posts.findIndex(x => x.id == item.id);
-                    if (isSelected != -1) {
+                    if (me.campaign.posts.findIndex(x => x.id == item.id) != -1) {
+                        item.is_selected = true;
+                    }
+                }
+                if (me.posts) {
+                    if (me.posts.findIndex(x => x.id == item.id) != -1) {
                         item.is_selected = true;
                     }
                 }
             });
+            if (me.isEdit && me.campaign) {
+                let campaignPosts = me.campaign.posts.filter(x => response.data.data.findIndex(y => y.id == x.id) == -1);
+                response.data.data.unshift(...campaignPosts);
+                console.log(me.campaign.posts);
+
+            } else if (params) {
+                let selectedPosts = this.posts.filter(x => x.is_selected && response.data.data.findIndex(y => y.id == x.id) == -1);
+                response.data.data.unshift(...selectedPosts);
+            }
+
             this.posts = response.data.data;
-            if(response.data && response.data.paging){
+            if (response.data && response.data.paging) {
                 this.postsCursor = response.data;
             }
             this.dashboardLoading = false;
@@ -761,29 +1235,21 @@ export default {
             let me = this;
             this.dashboardLoading = true;
             let response = await this.$http.get("/instagram/stories");
-            console.log(response.data);
 
             if (me.isEdit && me.campaign) {
                 response.data = response.data.filter(y => me.campaign.stories.findIndex(x => x.id == y.id) == -1);
             }
             response.data.forEach((item) => {
                 item.is_selected = false;
-                // if (me.isEdit && me.campaign) {
-                //     let isSelected = me.campaign.stories.findIndex(x => x.id == item.id);
-                //     if (isSelected != -1) {
-                //         item.is_selected = true;
-                //     }
-                // }
             });
-            this.stories = [];
+            me.stories = [];
 
             if (me.isEdit && me.campaign) {
-                this.stories = me.campaign.stories;
+                me.stories.push(...me.campaign.stories);
             }
-            this.stories.push(...response.data);
-
-            console.log(this.stories);
-            this.dashboardLoading = false;
+            me.stories.push(...response.data);
+            console.log(me.stories.length);
+            me.dashboardLoading = false;
         },
         togglePost: function (i) {
             let value = this.posts[i].is_selected;
@@ -821,10 +1287,37 @@ export default {
 
             this.stories[i].is_selected = !value;
         },
+        toggleTiktok: function (i) {
+            let value = this.tiktoks[i].is_selected;
+            if (typeof this.tiktoks[i].is_selected === "undefined") {
+                value = false;
+            }
+            console.log(value);
+
+            this.tiktoks[i].is_selected = !value;
+        },
+        toggleFacebook: function (i) {
+            let value = this.facebooks[i].is_selected;
+            if (typeof this.facebooks[i].is_selected === "undefined") {
+                value = false;
+            }
+            console.log(value);
+
+            this.facebooks[i].is_selected = !value;
+        },
+        toggleReel: function (i) {
+            let value = this.reels[i].is_selected;
+            if (typeof this.reels[i].is_selected === "undefined") {
+                value = false;
+            }
+
+            this.reels[i].is_selected = !value;
+        },
         async createCampaign() {
             if (this.googleViews && this.selectedGoogleView) {
                 this.selectedBlogPosts.map(x => x.websiteUrl = this.googleViews.find(y => y.id == this.selectedGoogleView).websiteUrl);
             }
+
             let data = {
                 name: this.campaignName,
                 brand_name: this.brandName,
@@ -834,8 +1327,18 @@ export default {
                 stories: this.selectedStories,
                 yt_videos: this.selectedYtVideos,
                 blog_pages: this.selectedBlogPosts,
+                fbposts: this.selectedFacebook,
+                reels: this.selectedReels,
+                tiktoks: this.selectedTiktok,
+                ga_blog_date: this.dateGA,
                 brand_logo: this.getCampaignImage(),
             };
+
+            if (pro_key == this.user.priceId) {
+                data.isProCampaign = true;
+            } else {
+                data.isProCampaign = false;
+            }
 
             if (this.isEdit) {
                 try {
@@ -866,6 +1369,7 @@ export default {
                             });
                         return res;
                     });
+                        
                     this.$router.push("/dashboard/" + response.data._id);
                 } catch (error) {
                     console.log(error);
@@ -876,6 +1380,209 @@ export default {
                 }
             }
         },
+        onAddStoryClick() {
+            this.oldStory = null;
+            this.oldStorySrc = null;
+            this.oldStoryExtension = null;
+            this.oldStoryFile = null;
+            this.impressions = 0;
+            this.reach = 0;
+            this.taps_forward = 0;
+            this.taps_back = 0;
+            this.exits = 0;
+            this.replies = 0;
+            this.swipe_ups = 0;
+            this.isEditOlderStory = true;    
+            this.addStoryDialog = true;
+            this.editStory = false;
+            this.editStoryData = null;
+        },
+        onFileStoryChange(e) {
+            if (!e)
+                return;
+            let vm = this;
+            this.oldStoryFile = e;
+            var extension = e.name.split('.').pop().toLowerCase()
+            var fr = new FileReader();
+            fr.onload = function () {
+                vm.oldStorySrc = fr.result;
+                vm.oldStoryExtension = extension;
+            }
+            fr.readAsDataURL(e);
+        },
+        async onSaveStoryClick() {
+
+            if (this.isEditOlderStory && this.oldStorySrc == null) {
+                return;
+            }
+
+            let data = new FormData();
+            data.append('oldStoryFile', this.oldStoryFile);
+            data.append('impressions', this.impressions);
+            data.append('reach', this.reach);
+            data.append('taps_back', this.taps_back);
+            data.append('taps_forward', 0);
+            data.append('exits', 0);
+            data.append('replies', this.replies);
+            data.append('swipe_ups', this.swipe_ups);
+            data.append('oldStoryExtension', this.oldStoryExtension);
+            data.append('isEditOlderStory', this.isEditOlderStory);
+
+            let successMsg = "created";
+            
+            if (this.editStoryData) {
+                data.append('olderStoryId', this.editStoryData.id);
+                successMsg = "updated";
+            }
+
+           
+            let response = await this.$http.post(`/campaigns/add-story`, data).then((res) => {
+                return res;
+            });
+
+            if (response) {
+                this.$store.dispatch("alertsModule/turnOnAlert", {
+                    type: "success",
+                    message: `Story ${successMsg} successfully`
+                });
+                this.addStoryDialog = false;
+                this.editStory = false;
+                this.editStoryData = null;
+                await this.getInstagramStories();
+            }
+        },
+        async onOldStoryEdit(story) {
+            this.editStory = true;
+            this.isEditOlderStory = true;
+            this.editStoryData = story;
+            if(story.isOlderStory){
+                this.oldStorySrc = story.media_url;
+                this.impressions = story.insights.impressions;
+                this.reach = story.insights.reach;
+                this.taps_forward = story.insights.taps_forward;
+                this.taps_back = story.insights.taps_back;
+                this.exits = story.insights.exits;
+                this.replies = story.insights.replies;
+                this.swipe_ups = story.insights.swipe_ups;
+            }
+            else{
+                this.isEditOlderStory = false;
+                this.swipe_ups = story?.insights?.swipe_ups || 0;
+            }
+            this.addStoryDialog = true;
+
+        },
+        async onOldStoryDelete(story) {
+            this.deleteStory = true;
+            this.deleteStoryId = story.id;
+        },
+        async onDeleteStoryConfrim() {
+            this.deleteStory = false;
+            let response = await this.$http.get(`/campaigns/delete-story/${this.deleteStoryId}`);
+            if (response) {
+                await this.getInstagramStories();
+            }
+        },
+        async getInstagramReels() {
+            let me = this;
+            this.dashboardLoading = true;
+            let response = await this.$http.get("/instagram/reels");
+
+            if (me.isEdit && me.campaign) {
+                response.data = response.data.filter(y => me.campaign.reels.findIndex(x => x.id == y.id) == -1);
+            }
+            response.data.forEach((item) => {
+                item.is_selected = false;
+            });
+            this.reels = [];
+
+            if (me.isEdit && me.campaign) {
+                this.reels = me.campaign.reels;
+            }
+            this.reels.push(...response.data);
+            this.dashboardLoading = false;
+
+        },
+        onAddReelClick() {
+            this.oldReel = null;
+            this.oldReelSrc = null;
+            this.oldReelExtension = null;
+            this.oldReelFile = null;
+            this.reel_views = 0;
+            this.reel_likes = 0;
+            this.reel_comments = 0;
+            this.addReelDialog = true;
+            this.editReel = false;
+            this.editReelData = null;
+        },
+        onFileReelChange(e) {
+            if (!e)
+                return;
+            let vm = this;
+            this.oldReelFile = e;
+            var extension = e.name.split('.').pop().toLowerCase()
+            var fr = new FileReader();
+            fr.onload = function () {
+                vm.oldReelSrc = fr.result;
+                vm.oldReelExtension = extension;
+            }
+            fr.readAsDataURL(e);
+        },
+        async onSaveReelClick() {
+
+            if (this.oldReelSrc == null) {
+                return;
+            }
+
+            let data = new FormData();
+            data.append('oldReelFile', this.oldReelFile);
+            data.append('reel_views', this.reel_views);
+            data.append('reel_likes', this.reel_likes);
+            data.append('reel_comments', this.reel_comments);
+
+            data.append('oldReelExtension', this.oldReelExtension);
+
+            if (this.editReelData) {
+                data.append('olderReelId', this.editReelData.id);
+            }
+
+            let response = await this.$http.post(`/campaigns/add-reel`, data).then((res) => {
+                return res;
+            });
+
+            if (response) {
+                this.$store.dispatch("alertsModule/turnOnAlert", {
+                    type: "success",
+                    message: "Reel created successfully"
+                });
+                this.addReelDialog = false;
+                this.editReel = false;
+                this.editReelData = null;
+                this.reels = [];
+                await this.getInstagramReels();
+            }
+        },
+        async onOldReelEdit(reel) {
+            this.editReel = true;
+            this.editReelData = reel;
+            this.oldReelSrc = reel.media_url;
+            this.reel_views = reel.insights.reel_views;
+            this.reel_likes = reel.insights.reel_likes;
+            this.reel_comments = reel.insights.reel_comments;
+            this.addReelDialog = true;
+
+        },
+        async onOldReelDelete(reel) {
+            this.deleteReel = true;
+            this.deleteReelId = reel.id;
+        },
+        async onDeleteReelConfrim() {
+            this.deleteReel = false;
+            let response = await this.$http.get(`/campaigns/delete-reel/${this.deleteReelId}`);
+            if (response) {
+                this.getInstagramReels();
+            }
+        }
     },
     computed: {
         campaign() {
@@ -935,10 +1642,47 @@ export default {
 
             return selectedBlogPosts;
         },
+        selectedFacebook: function () {
+            let selected;
+
+            selected = this.facebooks.filter((facebook) => {
+                return facebook.is_selected;
+            });
+
+            return selected;
+        },
+        selectedReels: function () {
+            let selected;
+
+            selected = this.reels.filter((reel) => {
+                return reel.is_selected;
+            });
+
+            return selected;
+        },
+        selectedTiktok: function () {
+            let selected;
+
+            selected = this.tiktoks.filter((tiktok) => {
+                return tiktok.is_selected;
+            });
+
+            return selected;
+        },
+        campaignIgDetail: function () {
+            if (this.user && this.user.ig_detail) {
+                return this.user.ig_detail.profile;
+            }
+
+            return null;
+        }
     },
     watch: {
         date(val) {
             this.dateFormatted = this.formatDate(this.date);
+        },
+        dateGA(val) {
+            this.dateFormattedGA = this.formatDate(this.dateGA);
         },
         amount: function (newValue) {
             this.amount = newValue;
@@ -1353,6 +2097,46 @@ export default {
 
     span {
         color: white !important;
+    }
+}
+
+.facebook-post-message {
+    overflow: hidden;
+    height: 60px;
+}
+
+.instagram-info-logo-story-upload {
+    height: 72px;
+    width: 72px;
+    border-radius: 50%;
+    border: 2px solid #7756e5;
+}
+
+.instagram-logo-story-upload {
+    position: relative;
+    bottom: 0px;
+    margin-left: -24px;
+    margin-bottom: -56px;
+    width: 24px;
+}
+
+.older-story {
+    width: 100%;
+    position: absolute;
+    z-index: 11;
+   
+    button {
+        opacity: 1;
+        background: white;
+        color: #9b9494 !important;
+        border-radius: 50%;
+        font-size: 16px !important;
+        width: 24px;
+        height: 24px;
+        cursor: pointer !important;
+        float: right;
+        top: 5px;
+        right: 2px
     }
 }
 </style>

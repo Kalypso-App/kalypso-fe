@@ -1,8 +1,24 @@
 <template>
-<v-container style="overflow-y:auto;">
+<v-container class="px-6" style="overflow-y:auto;">
     <div class="card-name">Payment Details</div>
     <v-divider class="divider-color"></v-divider>
+    <div class="free-trial-text" v-if="isFreeTrialTextShow()">
+        You will be charged on {{getFreeTrialTextDate()}}. Enjoy your free {{getFreeTrialTextDays()}} day trial.
+    </div>
     <div ref="card"></div>
+    <div class="coupon-div">
+        <v-row class="">
+            <v-col cols="12" sm="6" class="py-0">
+                <v-text-field label="Apply Coupon" v-model="coupon" class="input-style" background="#F8F8FF" filled></v-text-field>
+            </v-col>
+            <v-col cols="12" sm="6" class="py-0">
+                <v-btn color="primary" @click="applyCoupon">Apply</v-btn>
+            </v-col>
+            <v-col v-if="couponMsg" cols="12" sm="12" class="py-0">
+                <span :class="isCouponApplied ? 'coupon-success' : 'coupon-error'">{{this.couponMsg}}</span>
+            </v-col>
+        </v-row>
+    </div>
     <div class="pricing-container">
         <div @click="onchangepricing(product)" v-for="(product, i) in products" :key="i" :class="product.selected ? 'selected' : ''" class="pricing-v2-card">
             <div class="pricing-v2-header">
@@ -14,6 +30,9 @@
                 <img src="https://uploads-ssl.webflow.com/5e4d9bff0a8005acc9d4914a/5e4d9bff25ecd74b76c5dff1_circle-white.svg" alt="" class="pricing-card-circle">
             </div>
             <div class="pricing-v2-card-info">
+                <div v-if="product.price && product.price.recurring && product.price.recurring.trial_period_days" class="trial-period">
+                    {{product.price.recurring.trial_period_days}} Day Free Trial
+                </div>
                 <div v-if="i==0" class="pricing-features">
                     <div class="pricing-feature">
                         <div class="pricing-feature-icon"></div>
@@ -21,11 +40,11 @@
                     </div>
                     <div class="pricing-feature">
                         <div class="pricing-feature-icon"></div>
-                        <div><strong>Unlimited</strong> Reporting</div>
+                        <div> 2X/Month <strong>Insights Emails</strong></div>
                     </div>
                     <div class="pricing-feature">
                         <div class="pricing-feature-icon"></div>
-                        <div>Cancel Anytime<strong></strong></div>
+                        <div> <strong>Brand Recommendations</strong></div>
                     </div>
                     <div class="pricing-feature no">
                         <div class="pricing-feature-icon no"></div>
@@ -43,26 +62,21 @@
                     </div>
                     <div class="pricing-feature">
                         <div class="pricing-feature-icon"></div>
-                        <div><strong>Unlimited</strong> Reporting</div>
+                        <div> 2X/Month <strong>Insights Emails</strong></div>
                     </div>
                     <div class="pricing-feature">
                         <div class="pricing-feature-icon"></div>
-                        <div>Cancel Anytime</div>
+                        <div> <strong>Brand Recommendations</strong></div>
                     </div>
                     <div class="pricing-feature">
                         <div class="pricing-feature-icon"></div>
-                        <div><strong>Your branding</strong> on reports</div>
-                        <div class="info">
-                            <div class="tooltip hidden" style="display: none; transform: translate3d(0px, 4px, 0px) scale3d(1, 1, 1) rotateX(0deg) rotateY(0deg) rotateZ(0deg) skew(0deg, 0deg); transform-style: preserve-3d; opacity: 0;">
-                                <div>Writing result-oriented ad copy is difficult, as it must appeal to, entice, and convince consumers to take action.</div>
-                                <div class="tooltip-arrow"></div>
-                            </div>
-                        </div>
+                        <div> <strong>Your branding</strong> on reports</div>
                     </div>
                     <div class="pricing-feature">
                         <div class="pricing-feature-icon"></div>
-                        <div>Done-for-you <strong>custom</strong> reporting add-ons</div>
+                        <div> <strong>Custom </strong>reporting add-ons</div>
                     </div>
+                    
                 </div>
             </div>
         </div>
@@ -100,6 +114,7 @@ let style = {
 export default {
     props: {
         email: String,
+        name: String,
         checkout: Boolean,
         isFromSignup: Boolean
     },
@@ -116,6 +131,10 @@ export default {
         elements: null,
         card: null,
         isBasic: false,
+        coupon: null,
+        isCouponApplied: false,
+        couponMsg: null,
+        couponCode: null,
         customer: {},
         products: []
     }),
@@ -123,25 +142,25 @@ export default {
 
     },
     mounted: function () {
-       this.$nextTick(() => {
-        (this.stripe = Stripe(stripePk)),
-        (this.elements = this.stripe.elements()),
-        (this.card = undefined);
+        this.$nextTick(() => {
+            (this.stripe = Stripe(stripePk)),
+            (this.elements = this.stripe.elements()),
+            (this.card = undefined);
 
-        let me = this;
-        this.card = this.elements.create("card", style);
-        this.card.mount(this.$refs.card);
-        this.card.on('change', function (event) {
-            if (event.complete) {
-                me.$store.dispatch("checkoutModule/setCardValid", true);
-                // enable payment button
-            } else if (event.error) {
-                me.$store.dispatch("checkoutModule/setCardValid", false);
-                // show validation to customer
-            }
+            let me = this;
+            this.card = this.elements.create("card", style);
+            this.card.mount(this.$refs.card);
+            this.card.on('change', function (event) {
+                if (event.complete) {
+                    me.$store.dispatch("checkoutModule/setCardValid", true);
+                    // enable payment button
+                } else if (event.error) {
+                    me.$store.dispatch("checkoutModule/setCardValid", false);
+                    // show validation to customer
+                }
+            });
+            this.getProducts();
         });
-        this.getProducts();
-       });
     },
     methods: {
         onchangepricing(product) {
@@ -151,6 +170,50 @@ export default {
         async getProducts() {
             let response = await this.$http.get(`/stripe/products`, {});
             this.products = response.data.data;
+        },
+        async applyCoupon() {
+            let response = await this.$http.get(`/stripe/checkcoupon?coupon=${this.coupon}`);
+            if (response && response.data) {
+                this.couponMsg = `Coupon '${response.data.id}' applied successfully.`;
+                this.isCouponApplied = true;
+                this.couponCode = response.data.id;
+            } else {
+                this.couponMsg = "Invalid Coupon code.";
+                this.isCouponApplied = false;
+                this.couponCode = null;
+            }
+        },
+        isFreeTrialTextShow() {
+            let product = this.products.find(x => x.selected);
+            if (product) {
+                let price = product.price;
+                if (price && price.recurring && price.recurring.trial_period_days && price.recurring.trial_period_days > 0) {
+                    return true;
+                }
+            }
+            return false;
+        },
+        getFreeTrialTextDate() {
+          let product = this.products.find(x => x.selected);
+            if (product) {
+                let price = product.price;
+                if (price && price.recurring && price.recurring.trial_period_days && price.recurring.trial_period_days > 0) {
+                    var now = new Date();
+                    now.setDate(now.getDate() + price.recurring.trial_period_days);
+                    return now.toLocaleDateString("en-US",{ year: 'numeric', month: 'short', day: 'numeric' })
+                }
+            }
+            return false;
+        },
+        getFreeTrialTextDays() {
+           let product = this.products.find(x => x.selected);
+            if (product) {
+                let price = product.price;
+                if (price && price.recurring && price.recurring.trial_period_days && price.recurring.trial_period_days > 0) {
+                    return price.recurring.trial_period_days;
+                }
+            }
+            return 0;
         },
         redirectToCheckout() {
             let priceId = this.products.find(x => x.selected).price.id;
@@ -169,7 +232,8 @@ export default {
         },
         async createCustomer() {
             let me = this;
-            let name = this.email;
+            let email = this.email;
+            let name = this.name;
             let iValidCard = this.$store.getters["checkoutModule/isValidCard"]
 
             if (!iValidCard) {
@@ -183,7 +247,8 @@ export default {
             }
 
             let response = await this.$http.post(`/stripe/create-customer`, {
-                email: name,
+                email: email,
+                name: name
             }).then((res) => {
                 if (res.status == 200)
                     this.$store.dispatch("alertsModule/turnOnAlert", {
@@ -203,7 +268,8 @@ export default {
                     type: 'card',
                     card: me.card,
                     billing_details: {
-                        name: name,
+                        email: email,
+                        name: name
                     },
                 })
                 .then((result) => {
@@ -239,6 +305,7 @@ export default {
                     customerId: customerId,
                     paymentMethodId: paymentMethodId,
                     priceId: priceId,
+                    coupon: me.isCouponApplied ? me.couponCode : null
                 })
                 // If the card is declined, display an error to the user.
                 .then((result) => {
@@ -299,13 +366,13 @@ export default {
     grid-template-columns: 1fr 1fr;
     -ms-grid-rows: auto;
     grid-template-rows: auto;
-    padding: 30px;
+    padding: 30px 15px;
 }
 
 @media only screen and (max-width: 600px) {
- .pricing-container{
-   grid-template-columns: 1fr;
-  }
+    .pricing-container {
+        grid-template-columns: 1fr;
+    }
 }
 
 .selected {
@@ -508,5 +575,32 @@ export default {
     width: 100%;
     height: 48px;
     max-width: none;
+}
+
+.coupon-div {
+    display: flex;
+    margin-top: 20px;
+}
+
+.coupon-error {
+    font-size: 12px;
+    color: red;
+}
+
+.coupon-success {
+    font-size: 12px;
+    color: green;
+}
+
+.trial-period {
+    display: block;
+    color: #9165f7;
+    font-weight: bold;
+}
+
+.free-trial-text{
+    margin-bottom: 15px;
+    color: #7982a3;
+    font-size: 13px;
 }
 </style>

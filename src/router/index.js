@@ -33,7 +33,7 @@ const routes = [
     component: Reset,
   },
   {
-    path: "/campaign/:id",
+    path: "/share/:id",
     name: "share-campaign",
     component: ShareDashboard,
   },

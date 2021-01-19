@@ -2,11 +2,7 @@
 <div>
     <v-toolbar color="transparent" flat>
         <v-icon style="padding-right:15px;" @click.stop="onDrawerChange()">mdi-menu</v-icon>
-        <div class="navigation-search">
-            <v-text-field class="input-search" v-model="searchText" placeholder="Type to search" append-icon="mdi-magnify" @click:append="searchCampaign" v-on:keyup.enter="searchCampaign" hide-details single-line></v-text-field>
-        </div>
         <v-spacer></v-spacer>
-        <img src="@/assets/images/bell.svg">
         <v-divider class="vertical-line" vertical></v-divider>
         <v-avatar size="32">
             <img v-if="userImage" :src="userImage">
@@ -61,14 +57,10 @@ import ManageAccount from "@/views/accounts/manageAccount";
 export default {
     name: 'HorizontalNavigation',
     props: {
-        drawer: Boolean,
         icon: {
             type: String,
             default: 'bell-outline',
         }
-    },
-    watch: {
-        'drawer': function () {},
     },
     created() {
         this.userImage = localStorage.getItem('image')
@@ -86,13 +78,6 @@ export default {
         },
         manageAccount() {
             this.$refs.manageAccount.openManage();
-        },
-        searchCampaign() {
-            if (this.searchText.length) {
-                this.$store.dispatch("campaignsModule/searchCampaign", this.searchText);
-            } else {
-                this.$store.dispatch("campaignsModule/fetchCampaigns");
-            }
         },
         logout() {
             let me = this;

@@ -1,5 +1,5 @@
 <template>
-  <v-card width="400" class="mx-auto">
+  <v-card width="400" class="mx-auto my-4">
     <div class="text-center padding-title login">
       <img width="24" height="24" src="@/assets/images/logo.png" />
       <h5 class="project-name">Reset your password</h5>
@@ -41,10 +41,12 @@ export default {
         let response = await this.$http.post(`/forgot-password`, {
           email: this.email
         });
-        this.$store.dispatch("alertsModule/turnOnAlert", {
-          type: "success",
-          message: "Please check your inbox(spam too!)"
-        });
+        if(response){
+          this.$store.dispatch("alertsModule/turnOnAlert", {
+            type: "success",
+            message: "Please check your inbox(spam too!)"
+          });
+        }
       } catch (error) {
         this.$store.dispatch("alertsModule/turnOnAlert", {
           type: "error",

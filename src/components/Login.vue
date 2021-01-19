@@ -1,5 +1,5 @@
 <template>
-  <v-card  v-loading="isLoading" width="400" class="mx-auto">
+  <v-card width="400" class="mx-auto my-4">
     <div class="text-center padding-title login">
       <img width="24" height="24" src="@/assets/images/logo.png" />
       <h5 class="project-name">Sign in</h5>

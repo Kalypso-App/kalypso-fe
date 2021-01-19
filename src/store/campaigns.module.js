@@ -1,4 +1,7 @@
 import Vue from "vue";
+import {
+  app_URL
+} from "../config";
 
 export const campaignsModule = {
   namespaced: true,
@@ -26,12 +29,33 @@ export const campaignsModule = {
   },
 
   actions: {
-    fetchCampaigns({ commit }, user) {
+    fetchCampaigns({
+      commit
+    }, user) {
       return new Promise((resolve, reject) => {
         Vue.prototype.$http
           .get("/campaigns", user)
           .then((response) => {
             commit("setCampaigns", response.data);
+
+            if (response && response.data) {
+              // Update Intercom
+              window.Intercom('update', {
+                "Campaigns Created": response.data.length
+              });
+
+              // update list of campaigns url
+              // Campaigns List
+              let list = [];
+              response.data.forEach(campaign => {
+                list.push(app_URL + campaign._id);
+              });
+
+              window.Intercom('update', {
+                "Campaigns List": list.join(` \n `)
+              });
+            }
+
             resolve(response);
           })
           .catch((error) => {
@@ -40,7 +64,9 @@ export const campaignsModule = {
       });
     },
 
-    fetchCampaign({ commit }, id) {
+    fetchCampaign({
+      commit
+    }, id) {
       return new Promise((resolve, reject) => {
         Vue.prototype.$http
           .get(`/campaigns/${id}`)
@@ -55,7 +81,9 @@ export const campaignsModule = {
       });
     },
 
-    searchCampaign({commit}, searchText){
+    searchCampaign({
+      commit
+    }, searchText) {
       return new Promise((resolve, reject) => {
         Vue.prototype.$http
           .get(`/campaigns/search/${searchText}`)

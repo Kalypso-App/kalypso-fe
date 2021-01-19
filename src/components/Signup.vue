@@ -75,8 +75,8 @@
         <v-row class="mx-auto d-flex align-center justify-center">
           <div class="linking-btn"></div>
         </v-row>
-        <Checkout ref="checkout" :isFromSignup="true" :email="email" :checkout="checkout"/>
-        <div class="pull-right pb-5">
+        <Checkout ref="checkout" :isFromSignup="true" :email="email" :name="name" :checkout="checkout"/>
+        <div class="pull-right pb-5 py-4">
           <v-btn @click="$router.push('/login')">
             <v-icon>mdi-arrow-left</v-icon>Back
           </v-btn>

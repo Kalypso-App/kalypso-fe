@@ -17,7 +17,7 @@
                 </v-card>
             </v-dialog>
         </div>
-        <horizontal-navigation :drawer="drawer" v-on:onDrawerChange="onDrawerChange" v-if="isLoggedIn" />
+        <horizontal-navigation v-on:onDrawerChange="onDrawerChange" v-if="isLoggedIn" />
         <transition name="fade" mode="out-in">
             <router-view />
         </transition>
@@ -56,12 +56,19 @@ export default {
         isLoggedIn: function () {
             let name = this.$store.getters["authModule/user_name"];
             let email = this.$store.getters["authModule/user_email"];
+            let campaigns = this.$store.getters["authModule/user_campaigns"];
+
             if (name && email) {
-                window.Intercom("boot", {
+                let intercom = {
                     app_id: "debh4qt6",
                     name: name, // Full name
-                    email: email, // Email address             
-                });
+                    email: email, // Email address,
+                    "Paid Users": true
+                }
+                if(campaigns){
+                    intercom["Campaigns Created"] = campaigns;
+                }
+                window.Intercom("boot", intercom);
             } else {
                 window.Intercom("boot", {
                     app_id: "debh4qt6"
@@ -217,8 +224,13 @@ export default {
                     console.warn(error);
                 });
         },
-        onDrawerChange: function(){
-            this.drawer = !this.drawer;
+        onDrawerChange: function(state){
+            if(state){
+                this.drawer = state;
+            }
+            else{
+                this.drawer = !this.drawer;
+            }
         }
     },
 };

@@ -1,7 +1,8 @@
 <template>
-<v-navigation-drawer class="custom-navigation" mobile-break-point="768" mini-variant-width="71" v-model="drawer" app color="white">
+<v-navigation-drawer class="custom-navigation" mobile-break-point="768" mini-variant-width="71"
+ v-model="drawer" app color="white">
     <v-list shaped>
-        <v-list-item style="color:white !important" @click="$router.push('/')" class="padding-logo">
+        <v-list-item style="color:white !important" @click="$router.push('/campaigns')" class="padding-logo">
             <v-list-item-avatar>
                 <img :src="logo">
             </v-list-item-avatar>
@@ -51,13 +52,17 @@ import CampaignDefault from '@/assets/images/campaign-default.png';
 //    import CalendarDefault from '@/assets/images/calendar-default.png';
 import BlogDefault from '@/assets/images/blog-default.png';
 import SupportDefault from '@/assets/images/support-default.png';
+import ClickOutside from 'vue-click-outside';
+
 export default {
     name: 'Navigation',
     props: {
         drawer: Boolean,
     },
     watch: {
-        'drawer': function () {}
+        'drawer' : function(){
+            this.handleClickOutside();
+        }
     },
     data: () => ({
         item: 0,
@@ -90,7 +95,11 @@ export default {
     },
     created() {},
     methods: {
-
+        handleClickOutside(){
+            if(!this.drawer){
+                this.$emit('onDrawerChange', false);
+            }
+        }
     }
 
 };

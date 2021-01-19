@@ -1,5 +1,5 @@
 <template>
-  <v-card width="400" class="mx-auto">
+  <v-card width="400" class="mx-auto my-4">
     <div class="text-center padding-title login">
       <img width="24" height="24" src="@/assets/images/logo.png" />
       <h5 class="project-name">Reset your password</h5>
@@ -8,7 +8,6 @@
       <v-form ref="form">
         <v-text-field
           :type="showPassword ? 'text' : 'password'"
-          placeholder="New Password"
           label="New Password"
           v-model="password"
           filled
@@ -46,9 +45,10 @@ export default {
   methods: {
     async sendForget() {
       try {
+        let forgotstring = this.$route.params.email;
         let response = await this.$http.post(`/reset-password`, {
-          email: this.$route.params.email,
-          password: this.password
+          password: this.password,
+          forgotstring: forgotstring
         });
         this.$router.push(`/login`);
       } catch (error) {

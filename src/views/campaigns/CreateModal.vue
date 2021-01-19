@@ -1,5 +1,5 @@
 <template>
-  <div class="px-8">
+  <div class="px-8" style="display:flex">
     <!--<v-dialog v-model="dialog" scrollable max-width="592px">-->
     <!--<template v-slot:activator="{ on }">-->
     <v-btn @click="$router.push('/new-campaign')" class="modal-btn">
@@ -13,6 +13,10 @@
         </p>
       </div>
     </v-btn>
+    <v-spacer></v-spacer>
+    <div class="navigation-search">
+      <v-text-field class="input-search" v-model="searchText" placeholder="Search Campaign" append-icon="mdi-magnify" @click:append="searchCampaign" v-on:keyup.enter="searchCampaign" hide-details single-line></v-text-field>
+    </div>
   </div>
   <!--</template>-->
   <!--<v-card class="new-campaign-modal">-->
@@ -206,6 +210,7 @@ export default {
     amount: "",
     deliverable_name: "",
     dialog: false,
+    searchText: "",
     e1: 1,
     date: new Date().toISOString().substr(0, 10),
     menu: false,
@@ -218,6 +223,15 @@ export default {
       },
     ],
   }),
+  methods: {
+    searchCampaign() {
+            if (this.searchText.length) {
+                this.$store.dispatch("campaignsModule/searchCampaign", this.searchText);
+            } else {
+                this.$store.dispatch("campaignsModule/fetchCampaigns");
+            }
+        },
+  }
 };
 </script>
 <style lang="scss">

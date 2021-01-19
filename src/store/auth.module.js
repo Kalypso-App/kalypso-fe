@@ -10,6 +10,7 @@ export const authModule = {
     paymentEndDate:  localStorage.getItem("paymentEndDate") || null,
     user_email:  localStorage.getItem("user_email") || null,
     user_name:  localStorage.getItem("user_name") || null,
+    user_campaigns: 0,
   },
   getters: {
     isLoggedIn: (state) => !!state.token,
@@ -18,7 +19,8 @@ export const authModule = {
     userId: (state) => state.user,
     paymentEndDate: (state) => state.paymentEndDate,
     user_email: (state) => state.user_email,
-    user_name: (state) => state.user_name
+    user_name: (state) => state.user_name,
+    user_campaigns: (state) => state.user_campaigns
   },
   mutations: {
     auth_request(state) {
@@ -50,6 +52,14 @@ export const authModule = {
       state.user_name = data;
     },
 
+    set_user_image(state, data){
+      localStorage.setItem("image", data);       
+    },
+
+    set_user_campaigns(state, data){
+      state.user_campaigns = data;
+    },
+
     logout(state) {
       state.status = "";
       state.token = "";
@@ -61,6 +71,7 @@ export const authModule = {
       commit("set_paymentEndDate", date);
     },
     login({ commit }, user) {
+      let me = this;
       return new Promise((resolve, reject) => {
         commit("auth_request");
         Vue.prototype.$http
@@ -74,6 +85,7 @@ export const authModule = {
             commit("set_paymentEndDate",user.paymentEndDate);
             commit("set_user_email",user.email);
             commit("set_user_name",user.name);
+            commit("set_user_campaigns",user.campaigns.length);
 
             if (user.google_tokens && user.google_tokens[0]) {
               localStorage.setItem("is_google_authorized", true);
@@ -86,6 +98,12 @@ export const authModule = {
             localStorage.setItem("paymentEndDate", user.paymentEndDate);
             localStorage.setItem("user_email", user.email);
             localStorage.setItem("user_name", user.name);
+            if(user.ig_detail && user.ig_detail.profile && user.ig_detail.profile.profile_picture_url){
+              commit("set_user_image", user.ig_detail.profile.profile_picture_url);       
+            }
+            else if(user.google_ga_detail && user.google_ga_detail.picture){
+              commit("set_user_image", user.google_ga_detail.picture);       
+            }
 
             Vue.prototype.$http.defaults.headers.common[
               "Authorization"
@@ -105,6 +123,7 @@ export const authModule = {
       });
     },
     fbLogin({ commit }, payload) {
+      let me = this;
       return new Promise((resolve, reject) => {
         commit("auth_request");
         Vue.prototype.$http
@@ -125,7 +144,15 @@ export const authModule = {
             commit("set_paymentEndDate",user.paymentEndDate);
             commit("set_user_email",user.email);
             commit("set_user_name",user.name);
+            commit("set_user_campaigns",user.campaigns.length);
 
+            
+            if(user.ig_detail && user.ig_detail.profile && user.ig_detail.profile.profile_picture_url){
+              commit("set_user_image", user.ig_detail.profile.profile_picture_url);       
+            }
+            else if(user.google_ga_detail && user.google_ga_detail.picture){
+              commit("set_user_image", user.google_ga_detail.picture);       
+            }
 
             Vue.prototype.$http.defaults.headers.common[
               "Authorization"
@@ -178,6 +205,6 @@ export const authModule = {
         delete Vue.prototype.$http.defaults.headers.common["Authorization"];
         resolve();
       });
-    },
+    }
   },
 };
